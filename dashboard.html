@@ -155,6 +155,35 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            position: relative;
+            cursor: help;
+        }
+        
+        .snippet-cell:hover::after {
+            content: attr(title);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 8px 12px;
+            white-space: pre-wrap;
+            max-width: 400px;
+            width: max-content;
+            z-index: 1000;
+            font-size: 12px;
+            line-height: 1.4;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            pointer-events: none;
+        }
+        
+        @media (max-width: 768px) {
+            .snippet-cell:hover::after {
+                max-width: 300px;
+                font-size: 11px;
+            }
         }
         
         .model-cell {
@@ -264,6 +293,37 @@
             font-style: italic;
         }
         
+        .table-wrapper {
+            overflow-x: auto;
+            margin-top: 20px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px;
+        }
+        
+        @media (max-width: 768px) {
+            .table-wrapper {
+                margin: 10px -10px;
+                border-radius: 0;
+                border-left: none;
+                border-right: none;
+            }
+            
+            .fleet-table {
+                font-size: 12px;
+            }
+            
+            .fleet-table th,
+            .fleet-table td {
+                padding: 8px 10px;
+            }
+            
+            .snippet-cell {
+                max-width: 150px;
+            }
+        }
+        
         .error {
             padding: 20px;
             background: rgba(248, 81, 73, 0.1);
@@ -318,24 +378,26 @@
     
     <div class="loading" id="loading">Loading fleet data...</div>
     
-    <table id="fleet-table" class="fleet-table hidden">
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Status</th>
-                <th>Task</th>
-                <th>Snippet</th>
-                <th>Model</th>
-                <th>Ctx</th>
-                <th>Tokens</th>
-                <th>Last</th>
-                <th>Workspace</th>
-            </tr>
-        </thead>
-        <tbody id="fleet-tbody">
-            <!-- Rows will be inserted by JavaScript -->
-        </tbody>
-    </table>
+    <div class="table-wrapper" id="table-wrapper">
+        <table id="fleet-table" class="fleet-table hidden">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Status</th>
+                    <th>Task</th>
+                    <th>Snippet</th>
+                    <th>Model</th>
+                    <th>Ctx</th>
+                    <th>Tokens</th>
+                    <th>Last</th>
+                    <th>Workspace</th>
+                </tr>
+            </thead>
+            <tbody id="fleet-tbody">
+                <!-- Rows will be inserted by JavaScript -->
+            </tbody>
+        </table>
+    </div>
     
     <footer>
         <div>OpenClaw Fleet Monitor v1.1 • Data updates every minute via cron • UI updates every 2 seconds</div>
@@ -430,10 +492,20 @@
         
         // Handle WebSocket messages
         function handleWebSocketMessage(data) {
-            // For now, just trigger a data refresh
-            // In a real implementation, this would update specific rows
+            // Use WebSocket data directly instead of re-fetching
             console.log('WebSocket message received:', data);
-            fetchData();
+            
+            if (data.type === 'update' && data.data) {
+                // Update display with WebSocket data directly
+                lastUpdateTime = new Date();
+                updateDisplay(data.data);
+                hideError();
+            } else if (data.type === 'init' && data.data) {
+                // Initial data from WebSocket
+                lastUpdateTime = new Date();
+                updateDisplay(data.data);
+                hideError();
+            }
         }
         
         // Fetch data from JSON endpoint
