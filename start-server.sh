@@ -18,11 +18,13 @@ mkdir -p data
 
 # Run data collection once to ensure we have initial data
 echo "📊 Running initial data collection..."
-if [ -f "fleet-data-simple.bash" ]; then
+if [ -f "fleet-data-structural.bash" ]; then
+    bash fleet-data-structural.bash
+elif [ -f "fleet-data-simple.bash" ]; then
     bash fleet-data-simple.bash
 else
-    echo "⚠️  fleet-data-simple.bash not found, creating empty data file"
-    echo '[]' > data/fleet.json
+    echo "⚠️  No data collection script found, creating empty data file"
+    echo '{"generated_at": "'$(date -Iseconds)'", "agents": [], "usage": []}' > data/fleet.json
 fi
 
 # Start WebSocket server (if websockets module is installed)
