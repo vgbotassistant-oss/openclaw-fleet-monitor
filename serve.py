@@ -25,23 +25,31 @@ class FleetMonitorHandler(http.server.SimpleHTTPRequestHandler):
             self.serve_fleet_json()
             return
         
+        # Serve fleet-hourly.json
+        if self.path == "/data/fleet-hourly.json":
+            self.serve_file("data/fleet-hourly.json", "application/json")
+            return
+        
+        # Serve usage.json
+        if self.path == "/data/usage.json":
+            self.serve_file("data/usage.json", "application/json")
+            return
+        
         # Serve other files normally
         return super().do_GET()
     
-    def serve_fleet_json(self):
-        """Serve the fleet.json file with proper headers"""
+    def serve_file(self, filepath, content_type):
+        """Serve a file with proper headers"""
         try:
-            filepath = Path(DATA_FILE)
-            if not filepath.exists():
-                # Return empty array if file doesn't exist
-                data = []
-                content = json.dumps(data).encode('utf-8')
+            if not os.path.exists(filepath):
+                # Return empty JSON if file doesn't exist
+                content = b'{}'
             else:
                 with open(filepath, 'rb') as f:
                     content = f.read()
             
             self.send_response(200)
-            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Type", content_type)
             self.send_header("Access-Control-Allow-Origin", "*")
             self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
             self.send_header("Pragma", "no-cache")
@@ -51,7 +59,11 @@ class FleetMonitorHandler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(content)
             
         except Exception as e:
-            self.send_error(500, f"Error serving fleet.json: {str(e)}")
+            self.send_error(500, f"Error serving {filepath}: {str(e)}")
+    
+    def serve_fleet_json(self):
+        """Serve the fleet.json file with proper headers"""
+        self.serve_file("data/fleet.json", "application/json")
     
     def log_message(self, format, *args):
         """Custom log format with timestamp"""
