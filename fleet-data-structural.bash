@@ -52,6 +52,10 @@ declare -A sessions_map=()
 declare -A tokens_map=()
 declare -A models_map=()
 
+# Track date breakdown for chart visualization
+declare -A date_tokens_map=()
+declare -A date_sessions_map=()
+
 # Process each agent
 for agent in "${AGENTS[@]}"; do
     echo "  Processing agent: $agent"
@@ -83,8 +87,8 @@ for agent in "${AGENTS[@]}"; do
             if [ -f "$json_file" ]; then
                 # Extract data from JSON
                 if command -v jq >/dev/null 2>&1; then
-                    # Get model from this file
-                    file_model=$(jq -r '.model // .source // ""' "$json_file" 2>/dev/null || echo "")
+                    # Get model from this file - check sessions[0].model first
+                    file_model=$(jq -r '.sessions[0].model // .model // ""' "$json_file" 2>/dev/null || echo "")
                     if [ -n "$file_model" ] && [ "$file_model" != "null" ]; then
                         model="$file_model"
                     fi
@@ -125,6 +129,14 @@ for agent in "${AGENTS[@]}"; do
                         else
                             sessions_map[$key]=$((sessions_map[$key] + 1))
                             tokens_map[$key]=$((tokens_map[$key] + file_tokens))
+                        fi
+                        
+                        # Extract date for breakdown tracking (AFTER key is defined)
+                        file_date=$(jq -r '.timestamp // ""' "$json_file" 2>/dev/null | cut -c1-10)
+                        if [ -n "$file_date" ] && [ "$file_date" != "null" ]; then
+                            date_key="${key}:${file_date}"
+                            date_tokens_map[$date_key]=$((${date_tokens_map[$date_key]:-0} + file_tokens))
+                            date_sessions_map[$date_key]=$((${date_sessions_map[$date_key]:-0} + 1))
                         fi
                     fi
                     
@@ -226,14 +238,37 @@ for key in "${!sessions_map[@]}"; do
     cost=$(echo "$price_per_1k * $tokens_in_k" | bc -l 2>/dev/null || echo "0")
     cost_formatted=$(printf "%.6f" "$cost")
     
-    # Add to usage array
-    usage_array=$(echo "$usage_array" | jq --arg agent "$agent" \
+    # Build date_breakdown JSON for this key
+    date_breakdown="{}"
+    for date_key in "${!date_tokens_map[@]}"; do
+        # Only process entries belonging to this agent:provider:model key
+        if [[ "$date_key" == "${key}:"* ]]; then
+            file_date="${date_key##*:}"
+            d_tokens=${date_tokens_map[$date_key]}
+            d_sessions=${date_sessions_map[$date_key]}
+            d_tokens_k=$((d_tokens / 1000))
+            [ "$d_tokens_k" -eq 0 ] && d_tokens_k=1
+            d_cost=$(echo "$price_per_1k * $d_tokens_k" | bc -l 2>/dev/null || echo "0")
+            d_cost_fmt=$(printf "%.6f" "$d_cost")
+            date_breakdown=$(echo "$date_breakdown" | jq \
+                --arg date "$file_date" \
+                --argjson sessions "$d_sessions" \
+                --argjson tokens "$d_tokens" \
+                --arg cost "$d_cost_fmt" \
+                '. + {($date): {sessions: $sessions, tokens: $tokens, cost: $cost}}')
+        fi
+    done
+    
+    # Add entry to usage array
+    usage_array=$(echo "$usage_array" | jq \
+        --arg agent "$agent" \
         --arg provider "$provider" \
         --arg model "$model" \
         --argjson sessions "$sessions" \
         --argjson tokens "$tokens" \
         --arg price "$price_per_1k" \
         --arg cost "$cost_formatted" \
+        --argjson date_breakdown "$date_breakdown" \
         '. += [{
             agent: $agent,
             provider: $provider,
@@ -242,6 +277,7 @@ for key in "${!sessions_map[@]}"; do
             tokens: $tokens,
             price_per_1k: $price,
             cost_usd: $cost,
+            date_breakdown: $date_breakdown,
             calculated_at: "'$(date -Iseconds)'"
         }]')
     
