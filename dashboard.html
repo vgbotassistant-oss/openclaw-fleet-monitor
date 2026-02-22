@@ -358,6 +358,10 @@
             <span class="stat-value" id="idle-agents">0</span>
         </div>
         <div class="stat-card">
+            <span class="stat-label">Offline</span>
+            <span class="stat-value" id="offline-agents">0</span>
+        </div>
+        <div class="stat-card">
             <span class="stat-label">Last Update</span>
             <span class="stat-value" id="last-update">--:--</span>
         </div>
@@ -532,8 +536,10 @@
             totalAgentsEl.textContent = agents.length;
             const activeCount = agents.filter(a => a.status === '🟢').length;
             const idleCount = agents.filter(a => a.status === '🟡').length;
+            const offlineCount = agents.filter(a => a.status === '⚪').length;
             activeAgentsEl.textContent = activeCount;
             idleAgentsEl.textContent = idleCount;
+            offlineAgentsEl.textContent = offlineCount;
             
             // Update last update time
             if (lastUpdateTime) {
