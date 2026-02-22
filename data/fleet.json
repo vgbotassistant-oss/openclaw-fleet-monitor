@@ -5,8 +5,8 @@
       "snippet": "# Long-Term Memory — Reset (2026-02-22 purge per Victor)...",
       "model": "deepseek/deepseek-chat",
       "tokens": 0,
-      "context": 7,
-      "last_active": "17:46",
+      "context": 8,
+      "last_active": "18:00",
       "workspace": "/root/.openclaw/workspace-akane"
     },{
       "id": "ichinose",
@@ -16,16 +16,16 @@
       "model": "deepseek/deepseek-chat",
       "tokens": 0,
       "context": 10,
-      "last_active": "17:46",
+      "last_active": "18:00",
       "workspace": "/root/.openclaw/workspace-ichinose"
     },{
       "id": "roxi",
       "status": "🟢",
       "task": "Monitoring",
-      "snippet": "# 2026-02-22 — Daily Notes...",
+      "snippet": "# GitHub Push Workflow...",
       "model": "deepseek/deepseek-chat",
       "tokens": 0,
-      "context": 16,
-      "last_active": "17:46",
+      "context": 17,
+      "last_active": "18:00",
       "workspace": "/root/.openclaw/workspace-roxi"
     }]
