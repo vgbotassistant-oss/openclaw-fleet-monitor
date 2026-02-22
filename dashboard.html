@@ -336,6 +336,54 @@
         .hidden {
             display: none;
         }
+        
+        /* Usage Section Styles */
+        .usage-section {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+        
+        .usage-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .usage-filter {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .usage-filter label {
+            font-size: 13px;
+            color: var(--muted);
+        }
+        
+        .usage-filter select {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 13px;
+            min-width: 200px;
+        }
+        
+        .usage-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .cost-stat {
+            color: var(--success);
+        }
     </style>
 </head>
 <body>
@@ -401,6 +449,58 @@
                 <!-- Rows will be inserted by JavaScript -->
             </tbody>
         </table>
+    </div>
+    
+    <!-- Usage Section -->
+    <div class="usage-section" id="usage-section">
+        <h2>💰 API Usage & Costs</h2>
+        <div class="usage-controls">
+            <button class="btn btn-primary" id="refresh-usage">🔄 Refresh Usage</button>
+            <div class="usage-filter">
+                <label for="model-filter">Filter by Model:</label>
+                <select id="model-filter">
+                    <option value="all">All Models</option>
+                    <option value="deepseek/deepseek-chat">deepseek/deepseek-chat</option>
+                    <option value="grok-4-1-fast">grok-4-1-fast</option>
+                    <option value="gpt-4o-mini">gpt-4o-mini</option>
+                    <option value="anthropic/claude-sonnet-4-6">anthropic/claude-sonnet-4-6</option>
+                    <option value="o4-mini">o4-mini</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="usage-stats">
+            <div class="stat-card">
+                <span class="stat-label">Total Cost</span>
+                <span class="stat-value cost-stat" id="total-cost">$0.00</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Total Tokens</span>
+                <span class="stat-value tokens-stat" id="total-tokens-usage">0</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Avg Cost/Agent</span>
+                <span class="stat-value avg-stat" id="avg-cost">$0.00</span>
+            </div>
+        </div>
+        
+        <div class="table-wrapper">
+            <table id="usage-table" class="fleet-table">
+                <thead>
+                    <tr>
+                        <th>Agent</th>
+                        <th>Model</th>
+                        <th>Tokens</th>
+                        <th>Price/1K</th>
+                        <th>Cost</th>
+                        <th>Calculated</th>
+                    </tr>
+                </thead>
+                <tbody id="usage-tbody">
+                    <tr><td colspan="6" style="color:var(--muted);padding:16px 0;text-align:center;">Loading usage data...</td></tr>
+                </tbody>
+            </table>
+        </div>
     </div>
     
     <footer>
@@ -651,7 +751,103 @@
                     ws.send(JSON.stringify({ type: 'ping', timestamp: Date.now() }));
                 }
             }, 30000); // Every 30 seconds
+            
+            // Initialize usage section
+            initUsageSection();
         });
+        
+        // Phase 7.2: Usage Display Functions
+        const MODEL_PRICES = {
+            "deepseek/deepseek-chat": 0.00014,
+            "grok-4-1-fast": 0.001,
+            "gpt-4o-mini": 0.00015,
+            "anthropic/claude-sonnet-4-6": 0.003,
+            "o4-mini": 0.0025,
+            "unknown": 0.0001
+        };
+        
+        const USAGE_URL = 'data/usage.json';
+        
+        function initUsageSection() {
+            const refreshBtn = document.getElementById('refresh-usage');
+            const modelFilter = document.getElementById('model-filter');
+            
+            refreshBtn.addEventListener('click', fetchUsageData);
+            modelFilter.addEventListener('change', fetchUsageData);
+            
+            // Initial load
+            fetchUsageData();
+        }
+        
+        async function fetchUsageData() {
+            try {
+                const response = await fetch(USAGE_URL);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                updateUsageDisplay(data);
+            } catch (error) {
+                console.error('Error fetching usage data:', error);
+                showUsageError(`Failed to load usage data: ${error.message}`);
+            }
+        }
+        
+        function updateUsageDisplay(usageData) {
+            const modelFilter = document.getElementById('model-filter');
+            const selectedModel = modelFilter.value;
+            
+            // Filter data if needed
+            let filteredData = usageData;
+            if (selectedModel !== 'all') {
+                filteredData = usageData.filter(item => item.model === selectedModel);
+            }
+            
+            // Calculate totals
+            let totalCost = 0;
+            let totalTokens = 0;
+            
+            filteredData.forEach(item => {
+                totalCost += parseFloat(item.cost_usd || 0);
+                totalTokens += parseInt(item.tokens || 0);
+            });
+            
+            const avgCost = filteredData.length > 0 ? totalCost / filteredData.length : 0;
+            
+            // Update stats
+            document.getElementById('total-cost').textContent = `$${totalCost.toFixed(6)}`;
+            document.getElementById('total-tokens-usage').textContent = totalTokens.toLocaleString();
+            document.getElementById('avg-cost').textContent = `$${avgCost.toFixed(6)}`;
+            
+            // Update table
+            const tbody = document.getElementById('usage-tbody');
+            if (filteredData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="color:var(--muted);padding:16px 0;text-align:center;">No usage data found</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = filteredData.map(item => `
+                <tr>
+                    <td><strong>${escapeHtml(item.agent_id)}</strong></td>
+                    <td class="model-cell">${escapeHtml(item.model)}</td>
+                    <td class="tokens-cell">${parseInt(item.tokens).toLocaleString()}</td>
+                    <td>$${parseFloat(item.price_per_1k).toFixed(6)}</td>
+                    <td class="cost-stat">$${parseFloat(item.cost_usd).toFixed(6)}</td>
+                    <td class="last-active-cell">${escapeHtml(item.calculated_at.split('T')[1].split('.')[0])}</td>
+                </tr>
+            `).join('');
+        }
+        
+        function showUsageError(message) {
+            const tbody = document.getElementById('usage-tbody');
+            tbody.innerHTML = `<tr><td colspan="6" style="color:var(--danger);padding:16px 0;text-align:center;">${escapeHtml(message)}</td></tr>`;
+            
+            // Reset stats
+            document.getElementById('total-cost').textContent = '$0.00';
+            document.getElementById('total-tokens-usage').textContent = '0';
+            document.getElementById('avg-cost').textContent = '$0.00';
+        }
     </script>
 </body>
 </html>
