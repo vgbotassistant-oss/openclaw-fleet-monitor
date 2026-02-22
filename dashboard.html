@@ -438,6 +438,7 @@
         const totalAgentsEl = document.getElementById('total-agents');
         const activeAgentsEl = document.getElementById('active-agents');
         const idleAgentsEl = document.getElementById('idle-agents');
+        const offlineAgentsEl = document.getElementById('offline-agents');
         const lastUpdateEl = document.getElementById('last-update');
         const updateCounterEl = document.getElementById('update-counter');
         const dataAgeEl = document.getElementById('data-age');
@@ -540,6 +541,9 @@
             activeAgentsEl.textContent = activeCount;
             idleAgentsEl.textContent = idleCount;
             offlineAgentsEl.textContent = offlineCount;
+            
+            // Update page title with active/total count
+            document.title = `OpenClaw Fleet Monitor (${activeCount}/${agents.length})`;
             
             // Update last update time
             if (lastUpdateTime) {
