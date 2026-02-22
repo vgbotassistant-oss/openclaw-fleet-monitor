@@ -132,7 +132,7 @@ for agent in "${AGENTS[@]}"; do
                         fi
                         
                         # Extract date for breakdown tracking (AFTER key is defined)
-                        file_date=$(jq -r '.timestamp // ""' "$json_file" 2>/dev/null | cut -c1-10)
+                        file_date=$(jq -r '.timestamp // ""' "$json_file" 2>/dev/null | cut -c1-13)
                         if [ -n "$file_date" ] && [ "$file_date" != "null" ]; then
                             date_key="${key}:${file_date}"
                             date_tokens_map[$date_key]=$((${date_tokens_map[$date_key]:-0} + file_tokens))

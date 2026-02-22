@@ -1147,7 +1147,22 @@
                         x: {
                             title: {
                                 display: true,
-                                text: 'Date'
+                                text: 'Date / Hour (UTC)'
+                            },
+                            ticks: {
+                                callback: function(val, index) {
+                                    const label = this.getLabelForValue(val);
+                                    // Format "2026-02-22T14" → "Feb 22 14:00"
+                                    if (label && label.includes('T')) {
+                                        const [date, hour] = label.split('T');
+                                        const [y, m, d] = date.split('-');
+                                        const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                                        return `${months[parseInt(m)-1]} ${parseInt(d)} ${hour}:00`;
+                                    }
+                                    return label;
+                                },
+                                maxRotation: 45,
+                                minRotation: 45
                             }
                         },
                         y: {
