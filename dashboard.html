@@ -462,7 +462,23 @@
             min-width: 40px;
             text-align: right;
         }
+        
+        /* Chart wrapper */
+        .chart-wrapper {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .chart-wrapper canvas {
+            width: 100% !important;
+        }
     </style>
+    
+    <!-- Chart.js for cost graphs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 </head>
 <body>
     <header>
@@ -568,6 +584,10 @@
                 <span class="stat-label">Avg Cost/Agent</span>
                 <span class="stat-value avg-stat" id="avg-cost">$0.00</span>
             </div>
+        </div>
+        
+        <div class="chart-wrapper">
+            <canvas id="cost-chart" height="120"></canvas>
         </div>
         
         <div class="table-wrapper">
@@ -871,6 +891,16 @@
             "unknown": 0.0001
         };
         
+        const MODEL_COLORS = {
+            'deepseek/deepseek-chat': '#22c55e',
+            'grok-4-1-fast': '#f59e0b',
+            'gpt-4o-mini': '#3b82f6',
+            'anthropic/claude-sonnet-4-6': '#f97316',
+            'o4-mini': '#8b5cf6',
+            'unknown': '#6b7280'
+        };
+        
+        let costChart = null;
         const USAGE_URL = 'data/usage.json';
         
         function initUsageSection() {
@@ -1028,6 +1058,9 @@
                 </tr>
                 `;
             }).join('');
+            
+            // Render cost chart
+            renderCostChart(filteredData);
         }
         
         function showUsageError(message) {
@@ -1038,6 +1071,107 @@
             document.getElementById('total-cost').textContent = '$0.000000';
             document.getElementById('total-tokens-usage').textContent = '0';
             document.getElementById('avg-cost').textContent = '$0.000000';
+        }
+        
+        // Phase 9: Cost Chart Visualization
+        function renderCostChart(usageArray) {
+            const ctx = document.getElementById('cost-chart');
+            if (!ctx || !usageArray?.length) return;
+            
+            // Collect all unique dates from date_breakdown
+            const dateSet = new Set();
+            usageArray.forEach(item => {
+                if (item.date_breakdown) {
+                    Object.keys(item.date_breakdown).forEach(d => dateSet.add(d));
+                }
+            });
+            const dates = [...dateSet].sort();
+            
+            // If no date_breakdown, fall back to single entry using calculated_at
+            if (dates.length === 0) {
+                usageArray.forEach(item => {
+                    const d = (item.calculated_at || '').substring(0, 10);
+                    if (d) dateSet.add(d);
+                });
+                dates.push(...[...dateSet].sort());
+            }
+            
+            // Total cost bars per date
+            const totalPerDate = dates.map(date => 
+                usageArray.reduce((sum, item) => {
+                    const bd = item.date_breakdown?.[date];
+                    return sum + parseFloat(bd?.cost || 0);
+                }, 0)
+            );
+            
+            // One line per model
+            const modelDatasets = usageArray.map(item => ({
+                type: 'line',
+                label: item.model,
+                data: dates.map(date => parseFloat(item.date_breakdown?.[date]?.cost || 0)),
+                borderColor: MODEL_COLORS[item.model] || MODEL_COLORS['unknown'],
+                backgroundColor: 'transparent',
+                tension: 0.3,
+                pointRadius: 4,
+                order: 1
+            }));
+            
+            const datasets = [
+                {
+                    type: 'bar',
+                    label: 'Total Cost',
+                    data: totalPerDate,
+                    backgroundColor: 'rgba(99,102,241,0.25)',
+                    borderColor: 'rgba(99,102,241,0.8)',
+                    borderWidth: 1,
+                    order: 2
+                },
+                ...modelDatasets
+            ];
+            
+            if (costChart) costChart.destroy();
+            
+            costChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: dates,
+                    datasets
+                },
+                options: {
+                    responsive: true,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Date'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Cost (USD)'
+                            },
+                            ticks: {
+                                callback: val => `$${val.toFixed(4)}`
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => `${ctx.dataset.label}: $${ctx.parsed.y.toFixed(6)}`
+                            }
+                        }
+                    }
+                }
+            });
         }
     </script>
 </body>

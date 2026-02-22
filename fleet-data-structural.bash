@@ -57,7 +57,6 @@ for agent in "${AGENTS[@]}"; do
     echo "  Processing agent: $agent"
     
     workspace="/root/.openclaw/workspace-${agent}"
-    memory_dir="$workspace/memory/hourly"
     
     # Default values for agent
     status="🟢"
@@ -69,8 +68,11 @@ for agent in "${AGENTS[@]}"; do
     last_active=""
     sessions=0
     
-    # Check for memory/hourly directory
-    if [ -d "$memory_dir" ]; then
+    # Scan all project subfolders within the workspace
+    memory_dirs=$(find "$workspace" -type d -name "hourly" 2>/dev/null)
+    
+    # Process each hourly directory found
+    for memory_dir in $memory_dirs; do
         # Get all JSON files
         json_files=$(find "$memory_dir" -name "*.json" -type f 2>/dev/null)
         session_count=$(echo "$json_files" | wc -w)
@@ -87,8 +89,27 @@ for agent in "${AGENTS[@]}"; do
                         model="$file_model"
                     fi
                     
-                    # Get tokens from this file
-                    file_tokens=$(jq -r '.tokens_total // .tokens // 0' "$json_file" 2>/dev/null || echo "0")
+                    # Get tokens from this file - dual format parser
+                    # Try tokens_total first
+                    file_tokens=$(jq -r '.tokens_total // 0' "$json_file" 2>/dev/null || echo "0")
+                    
+                    # If 0, try summing tokens_in + tokens_out
+                    if [ "$file_tokens" = "0" ] || [ "$file_tokens" = "null" ]; then
+                        t_in=$(jq -r '.sessions[]?.tokens_in // 0' "$json_file" 2>/dev/null | awk '{s+=$1} END{print s+0}')
+                        t_out=$(jq -r '.sessions[]?.tokens_out // 0' "$json_file" 2>/dev/null | awk '{s+=$1} END{print s+0}')
+                        file_tokens=$((t_in + t_out))
+                    fi
+                    
+                    # If still 0, try parsing string format "946 in / 628 out"
+                    if [ "$file_tokens" = "0" ]; then
+                        token_str=$(jq -r '.sessions[]?.tokens // ""' "$json_file" 2>/dev/null | head -1)
+                        if [ -n "$token_str" ]; then
+                            t_in=$(echo "$token_str" | grep -oP '[\d.]+(?=k? in)' | awk '{if($0~/k/)print $0*1000;else print $0}')
+                            t_out=$(echo "$token_str" | grep -oP '[\d.]+(?=k? out)' | awk '{if($0~/k/)print $0*1000;else print $0}')
+                            file_tokens=$(echo "${t_in:-0} ${t_out:-0}" | awk '{print int($1+$2)}')
+                        fi
+                    fi
+                    
                     if [ "$file_tokens" != "0" ] && [ "$file_tokens" != "null" ]; then
                         tokens=$((tokens + file_tokens))
                         
@@ -96,7 +117,8 @@ for agent in "${AGENTS[@]}"; do
                         provider=$(get_provider "$model")
                         key="${agent}:${provider}:${model}"
                         
-                        if [ -z "${sessions_map[$key]}" ]; then
+                        # Check if key exists in sessions_map
+                        if [[ -z "${sessions_map[$key]+x}" ]]; then
                             sessions_map[$key]=1
                             tokens_map[$key]=$file_tokens
                             models_map[$key]="$model"
@@ -133,13 +155,15 @@ for agent in "${AGENTS[@]}"; do
                 fi
             fi
         done
-        
-        # Count memory files for context
-        context=$(find "$workspace" -name "*.md" -type f 2>/dev/null | wc -l)
-    else
+    done
+    
+    # Count memory files for context
+    context=$(find "$workspace" -name "*.md" -type f 2>/dev/null | wc -l)
+    
+    # If no hourly data found at all
+    if [ "$sessions" -eq 0 ]; then
         status="⚪"
         task="No hourly data"
-        sessions=0
     fi
     
     # Add to agents array
