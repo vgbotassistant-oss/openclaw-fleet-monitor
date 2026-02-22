@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenClaw Fleet Monitor</title>
+    <style>
+        :root {
+            --bg: #0d1117;
+            --surface: #161b22;
+            --border: #30363d;
+            --accent: #58a6ff;
+            --success: #3fb950;
+            --warn: #d29922;
+            --danger: #f85149;
+            --text: #c9d1d9;
+            --muted: #8b949e;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        header {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        h1 {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .subtitle {
+            color: var(--muted);
+            font-size: 14px;
+        }
+        
+        .stats-bar {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 15px;
+            min-width: 180px;
+        }
+        
+        .stat-label {
+            display: block;
+            font-size: 12px;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: 600;
+        }
+        
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .status-active {
+            background: rgba(63, 185, 80, 0.2);
+            color: var(--success);
+        }
+        
+        .status-idle {
+            background: rgba(210, 153, 34, 0.2);
+            color: var(--warn);
+        }
+        
+        .status-offline {
+            background: rgba(139, 148, 158, 0.2);
+            color: var(--muted);
+        }
+        
+        /* Fleet Table Styles */
+        .fleet-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .fleet-table th {
+            background: var(--accent);
+            color: #000;
+            font-weight: 600;
+            text-align: left;
+            padding: 12px 16px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .fleet-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            font-size: 13px;
+            vertical-align: top;
+        }
+        
+        .fleet-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .fleet-table tr:hover {
+            background: rgba(88, 166, 255, 0.05);
+        }
+        
+        .status-cell {
+            font-size: 20px;
+            text-align: center;
+        }
+        
+        .snippet-cell {
+            max-width: 300px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .model-cell {
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 11px;
+            color: var(--accent);
+        }
+        
+        .tokens-cell {
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 12px;
+            text-align: right;
+        }
+        
+        .last-active-cell {
+            font-size: 11px;
+            color: var(--muted);
+            white-space: nowrap;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+        
+        .btn {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn:hover {
+            background: var(--accent);
+            color: #000;
+            border-color: var(--accent);
+        }
+        
+        .btn-primary {
+            background: var(--accent);
+            color: #000;
+            border-color: var(--accent);
+            font-weight: 500;
+        }
+        
+        .btn-primary:hover {
+            opacity: 0.9;
+        }
+        
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+        }
+        
+        .connection-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+        }
+        
+        .connection-dot.connected {
+            background: var(--success);
+        }
+        
+        .connection-dot.connecting {
+            background: var(--warn);
+            animation: pulse 1.5s infinite;
+        }
+        
+        .connection-dot.disconnected {
+            background: var(--danger);
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+            text-align: center;
+            color: var(--muted);
+            font-size: 12px;
+        }
+        
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            color: var(--muted);
+            font-style: italic;
+        }
+        
+        .error {
+            padding: 20px;
+            background: rgba(248, 81, 73, 0.1);
+            border: 1px solid var(--danger);
+            border-radius: 8px;
+            color: var(--danger);
+            margin-bottom: 20px;
+        }
+        
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🚀 OpenClaw Fleet Monitor</h1>
+        <div class="subtitle">Real-time monitoring of all OpenClaw agents • Auto-refresh every 2 seconds</div>
+    </header>
+    
+    <div class="stats-bar">
+        <div class="stat-card">
+            <span class="stat-label">Total Agents</span>
+            <span class="stat-value" id="total-agents">0</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-label">Active</span>
+            <span class="stat-value" id="active-agents">0</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-card">
+            <span class="stat-label">Idle</span>
+            <span class="stat-value" id="idle-agents">0</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-label">Last Update</span>
+            <span class="stat-value" id="last-update">--:--</span>
+        </div>
+    </div>
+    
+    <div class="controls">
+        <div>
+            <button class="btn btn-primary" id="refresh-btn">🔄 Refresh Now</button>
+            <button class="btn" id="toggle-auto">⏸️ Pause Auto-Refresh</button>
+        </div>
+        <div class="connection-status">
+            <div class="connection-dot connecting" id="connection-dot"></div>
+            <span id="connection-text">Connecting...</span>
+        </div>
+    </div>
+    
+    <div class="error hidden" id="error-message"></div>
+    
+    <div class="loading" id="loading">Loading fleet data...</div>
+    
+    <table id="fleet-table" class="fleet-table hidden">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Status</th>
+                <th>Task</th>
+                <th>Snippet</th>
+                <th>Model</th>
+                <th>Ctx</th>
+                <th>Tokens</th>
+                <th>Last</th>
+                <th>Workspace</th>
+            </tr>
+        </thead>
+        <tbody id="fleet-tbody">
+            <!-- Rows will be inserted by JavaScript -->
+        </tbody>
+    </table>
+    
+    <footer>
+        <div>OpenClaw Fleet Monitor v1.1 • Data updates every minute via cron • UI updates every 2 seconds</div>
+        <div style="margin-top: 8px; font-size: 11px;">
+            <span id="update-counter">Updates: 0</span> • 
+            <span id="data-age">Data age: --</span> • 
+            <span id="ws-status">WebSocket: connecting</span>
+        </div>
+    </footer>
+    
+    <script>
+        // Configuration
+        const DATA_URL = 'data/fleet.json';
+        const WS_URL = 'ws://127.0.0.1:18789';
+        const POLL_INTERVAL = 2000; // 2 seconds
+        const MAX_RETRIES = 3;
+        
+        // State
+        let updateCount = 0;
+        let autoRefresh = true;
+        let ws = null;
+        let retryCount = 0;
+        let lastUpdateTime = null;
+        
+        // DOM Elements
+        const fleetTable = document.getElementById('fleet-table');
+        const fleetTbody = document.getElementById('fleet-tbody');
+        const loadingEl = document.getElementById('loading');
+        const errorEl = document.getElementById('error-message');
+        const refreshBtn = document.getElementById('refresh-btn');
+        const toggleAutoBtn = document.getElementById('toggle-auto');
+        const connectionDot = document.getElementById('connection-dot');
+        const connectionText = document.getElementById('connection-text');
+        const totalAgentsEl = document.getElementById('total-agents');
+        const activeAgentsEl = document.getElementById('active-agents');
+        const idleAgentsEl = document.getElementById('idle-agents');
+        const lastUpdateEl = document.getElementById('last-update');
+        const updateCounterEl = document.getElementById('update-counter');
+        const dataAgeEl = document.getElementById('data-age');
+        const wsStatusEl = document.getElementById('ws-status');
+        
+        // Initialize WebSocket
+        function initWebSocket() {
+            try {
+                ws = new WebSocket(WS_URL);
+                updateConnectionStatus('connecting', 'Connecting to WebSocket...');
+                
+                ws.onopen = () => {
+                    updateConnectionStatus('connected', 'WebSocket connected');
+                    retryCount = 0;
+                };
+                
+                ws.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        handleWebSocketMessage(data);
+                    } catch (err) {
+                        console.error('WebSocket message parse error:', err);
+                    }
+                };
+                
+                ws.onclose = () => {
+                    updateConnectionStatus('disconnected', 'WebSocket disconnected');
+                    // Attempt to reconnect after delay
+                    setTimeout(() => {
+                        if (retryCount < MAX_RETRIES) {
+                            retryCount++;
+                            console.log(`WebSocket reconnection attempt ${retryCount}/${MAX_RETRIES}`);
+                            initWebSocket();
+                        }
+                    }, 3000);
+                };
+                
+                ws.onerror = (error) => {
+                    console.error('WebSocket error:', error);
+                    updateConnectionStatus('disconnected', 'WebSocket error');
+                };
+            } catch (err) {
+                console.error('WebSocket initialization error:', err);
+                updateConnectionStatus('disconnected', 'WebSocket unavailable');
+            }
+        }
+        
+        // Update connection status UI
+        function updateConnectionStatus(status, text) {
+            connectionDot.className = 'connection-dot ' + status;
+            connectionText.textContent = text;
+            wsStatusEl.textContent = `WebSocket: ${status}`;
+        }
+        
+        // Handle WebSocket messages
+        function handleWebSocketMessage(data) {
+            // For now, just trigger a data refresh
+            // In a real implementation, this would update specific rows
+            console.log('WebSocket message received:', data);
+            fetchData();
+        }
+        
+        // Fetch data from JSON endpoint
+        async function fetchData() {
+            try {
+                const response = await fetch(DATA_URL);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                lastUpdateTime = new Date();
+                updateDisplay(data);
+                hideError();
+            } catch (error) {
+                console.error('Error fetching fleet data:', error);
+                showError(`Failed to load fleet data: ${error.message}`);
+            }
+        }
+        
+        // Update the display with new data
+        function updateDisplay(agents) {
+            // Update stats
+            totalAgentsEl.textContent = agents.length;
+            const activeCount = agents.filter(a => a.status === '🟢').length;
+            const idleCount = agents.filter(a => a.status === '🟡').length;
+            activeAgentsEl.textContent = activeCount;
+            idleAgentsEl.textContent = idleCount;
+            
+            // Update last update time
+            if (lastUpdateTime) {
+                lastUpdateEl.textContent = lastUpdateTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                
+                // Calculate data age
+                const ageMs = Date.now() - lastUpdateTime.getTime();
+                const ageSec = Math.floor(ageMs / 1000);
+                dataAgeEl.textContent = `Data age: ${ageSec}s`;
+            }
+            
+            // Update table
+            fleetTbody.innerHTML = agents.map(agent => `
+                <tr>
+                    <td><strong>${escapeHtml(agent.id)}</strong></td>
+                    <td class="status-cell">${agent.status}</td>
+                    <td>${escapeHtml(agent.task)}</td>
+                    <td class="snippet-cell" title="${escapeHtml(agent.snippet)}">${escapeHtml(agent.snippet.substring(0, 50))}${agent.snippet.length > 50 ? '...' : ''}</td>
+                    <td class="model-cell">${escapeHtml(agent.model)}</td>
+                    <td>${agent.context}</td>
+                    <td class="tokens-cell">${agent.tokens.toLocaleString()}</td>
+                    <td class="last-active-cell">${escapeHtml(agent.last_active)}</td>
+                    <td class="last-active-cell" title="${escapeHtml(agent.workspace)}">${escapeHtml(agent.workspace.split('/').pop())}</td>
+                </tr>
+            `).join('');
+            
+            // Show table, hide loading
+            fleetTable.classList.remove('hidden');
+            loadingEl.classList.add('hidden');
+            
+            // Update counter
+            updateCount++;
+            updateCounterEl.textContent = `Updates: ${updateCount}`;
+        }
+        
+        // Error handling
+        function showError(message) {
+            errorEl.textContent = message;
+            errorEl.classList.remove('hidden');
+            fleetTable.classList.add('hidden');
+            loadingEl.classList.add('hidden');
+        }
+        
+        function hideError() {
+            errorEl.classList.add('hidden');
+        }
+        
+        // Utility function to escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Auto-refresh polling
+        let pollInterval = null;
+        
+        function startPolling() {
+            if (pollInterval) clearInterval(pollInterval);
+            pollInterval = setInterval(() => {
+                if (autoRefresh) {
+                    fetchData();
+                }
+            }, POLL_INTERVAL);
+        }
+        
+        function stopPolling() {
+            if (pollInterval) {
+                clearInterval(pollInterval);
+                pollInterval = null;
+            }
+        }
+        
+        // Event listeners
+        refreshBtn.addEventListener('click', () => {
+            fetchData();
+        });
+        
+        toggleAutoBtn.addEventListener('click', () => {
+            autoRefresh = !autoRefresh;
+            if (autoRefresh) {
+                toggleAutoBtn.textContent = '⏸️ Pause Auto-Refresh';
+                startPolling();
+            } else {
+                toggleAutoBtn.textContent = '▶️ Resume Auto-Refresh';
+                stopPolling();
+            }
+        });
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initial data load
+            fetchData();
+            
+            // Start polling
+            startPolling();
+            
+            // Initialize WebSocket
+            initWebSocket();
+            
+            // Set up periodic WebSocket health check
+            setInterval(() => {
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    // Send ping to keep connection alive
+                    ws.send(JSON.stringify({ type: 'ping', timestamp: Date.now() }));
+                }
+            }, 30000); // Every 30 seconds
+        });
+    </script>
+</body>
+</html>

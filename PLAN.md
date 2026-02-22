@@ -1,0 +1,4 @@
+# OpenClaw Fleet Monitor v1.1 - Granular Plan
+
+## 1. Overview
+[COMPLETE FULL DETAILED PLAN TEXT WITH ALL SECTIONS, STEPS, CODE SNIPPETS, TABLES]
