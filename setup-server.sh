@@ -11,11 +11,9 @@ echo "📦 Installing dependencies..."
 apt update
 apt install -y certbot python3-certbot-nginx apache2-utils
 
-# 2. Create password file (username: fleet, password will be provided)
-echo "🔐 Creating password file..."
-echo "Please provide the password for user 'fleet':"
-read -s PASSWORD
-htpasswd -c -b /etc/nginx/.htpasswd-fleet fleet "$PASSWORD"
+# 2. Create password file with Victor's credentials
+echo "🔐 Creating password file with Victor's credentials..."
+htpasswd -c -b /etc/nginx/.htpasswd-fleet victor Airhelly1
 chmod 644 /etc/nginx/.htpasswd-fleet
 echo "✅ Password file created at /etc/nginx/.htpasswd-fleet"
 
