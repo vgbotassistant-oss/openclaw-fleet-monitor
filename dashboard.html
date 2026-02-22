@@ -294,7 +294,6 @@
             <span class="stat-value" id="active-agents">0</span>
         </div>
         <div class="stat-card">
-            <span class="stat-card">
             <span class="stat-label">Idle</span>
             <span class="stat-value" id="idle-agents">0</span>
         </div>
@@ -400,14 +399,16 @@
                 
                 ws.onclose = () => {
                     updateConnectionStatus('disconnected', 'WebSocket disconnected');
-                    // Attempt to reconnect after delay
-                    setTimeout(() => {
-                        if (retryCount < MAX_RETRIES) {
-                            retryCount++;
-                            console.log(`WebSocket reconnection attempt ${retryCount}/${MAX_RETRIES}`);
+                    // Attempt to reconnect with exponential backoff
+                    if (retryCount < MAX_RETRIES) {
+                        retryCount++;
+                        // Exponential backoff: 1s, 2s, 4s, 8s, 16s, 32s, max 60s
+                        const backoffDelay = Math.min(1000 * Math.pow(2, retryCount - 1), 60000);
+                        console.log(`WebSocket reconnection attempt ${retryCount}/${MAX_RETRIES} in ${backoffDelay}ms`);
+                        setTimeout(() => {
                             initWebSocket();
-                        }
-                    }, 3000);
+                        }, backoffDelay);
+                    }
                 };
                 
                 ws.onerror = (error) => {

@@ -25,10 +25,22 @@ else
     echo '[]' > data/fleet.json
 fi
 
+# Start WebSocket server (if websockets module is installed)
+echo "🔌 Starting WebSocket server on port 18789..."
+if python3 -c "import websockets" 2>/dev/null; then
+    nohup python3 websocket-server.py > websocket.log 2>&1 &
+    WS_PID=$!
+    echo "✅ WebSocket server started (PID: $WS_PID, log: websocket.log)"
+else
+    echo "⚠️  websockets module not installed. WebSocket server disabled."
+    echo "📝 Install with: pip install websockets watchdog"
+fi
+
 # Start HTTP server
 echo "🌐 Starting HTTP server on port 8081..."
 echo "📊 Dashboard: http://localhost:8081/"
 echo "📁 Data API: http://localhost:8081/data/fleet.json"
+echo "🔌 WebSocket: ws://localhost:18789"
 echo ""
 echo "Press Ctrl+C to stop all servers"
 echo ""
