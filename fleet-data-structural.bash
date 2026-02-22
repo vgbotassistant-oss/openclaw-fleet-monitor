@@ -299,6 +299,39 @@ if [ -z "${sessions_map[*]}" ] || [ "${#sessions_map[@]}" -eq 0 ]; then
     }]')
 fi
 
+# Merge historical data into date_breakdown
+HISTORY_DIR="/root/.openclaw/projects/openclaw-fleet-monitor/data/history"
+if [ -d "$HISTORY_DIR" ]; then
+    echo "📚 Merging historical data from $HISTORY_DIR..."
+    for history_file in "$HISTORY_DIR"/*.json; do
+        [ -f "$history_file" ] || continue
+        
+        hist_date=$(jq -r '.date' "$history_file" 2>/dev/null)
+        [ -z "$hist_date" ] || [ "$hist_date" = "null" ] && continue
+        
+        # For each model entry in history, merge into matching usage entry
+        model_count=$(jq '.models | length' "$history_file" 2>/dev/null || echo "0")
+        for i in $(seq 0 $((model_count - 1))); do
+            hist_model=$(jq -r ".models[$i].model" "$history_file")
+            hist_agent=$(jq -r ".models[$i].agent" "$history_file")
+            hist_sessions=$(jq -r ".models[$i].date_data.sessions" "$history_file")
+            hist_tokens=$(jq -r ".models[$i].date_data.tokens" "$history_file")
+            hist_cost=$(jq -r ".models[$i].date_data.cost" "$history_file")
+            
+            # Merge into matching entry in usage_array
+            usage_array=$(echo "$usage_array" | jq \
+                --arg model "$hist_model" \
+                --arg agent "$hist_agent" \
+                --arg date "$hist_date" \
+                --argjson sessions "$hist_sessions" \
+                --argjson tokens "$hist_tokens" \
+                --arg cost "$hist_cost" \
+                'map(if .model == $model and .agent == $agent then .date_breakdown[$date] = { sessions: $sessions, tokens: $tokens, cost: $cost } else . end)')
+        done
+        echo " ✓ Merged history for $hist_date"
+    done
+fi
+
 # Write final JSON structure
 echo "📁 Writing structured data to $OUT"
 cat > "$OUT" <<EOF
