@@ -1,0 +1,67 @@
+{
+  "date": "2026-02-25",
+  "archived_at": "2026-02-25T00:00:01Z",
+  "models": [
+    {
+      "model": "deepseek/deepseek-chat",
+      "provider": "DeepSeek",
+      "agent": "akane",
+      "sessions": 17,
+      "tokens": 51484,
+      "price_per_1k": "0.00014",
+      "cost_usd": "0.007140",
+      "date_data": {
+        "sessions": 17,
+        "tokens": 51484,
+        "cost": "0.007140"
+      }
+    },
+    {
+      "model": "gpt-4o-mini",
+      "provider": "OpenAI",
+      "agent": "roxi",
+      "sessions": 1,
+      "tokens": 127590,
+      "price_per_1k": "0.00015",
+      "cost_usd": "0.019050",
+      "date_data": {
+        "sessions": 1,
+        "tokens": 127590,
+        "cost": "0.019050"
+      }
+    },
+    {
+      "model": "test",
+      "provider": "Unknown",
+      "agent": "roxi",
+      "sessions": 1,
+      "tokens": 15000,
+      "price_per_1k": "0.0001",
+      "cost_usd": "0.001500",
+      "date_data": {
+        "sessions": 1,
+        "tokens": 15000,
+        "cost": "0.001500"
+      }
+    },
+    {
+      "model": "deepseek/deepseek-chat",
+      "provider": "DeepSeek",
+      "agent": "roxi",
+      "sessions": 22,
+      "tokens": 136738,
+      "price_per_1k": "0.00014",
+      "cost_usd": "0.019040",
+      "date_data": {
+        "sessions": 22,
+        "tokens": 136738,
+        "cost": "0.019040"
+      }
+    }
+  ],
+  "totals": {
+    "sessions": 41,
+    "tokens": 330812,
+    "cost_usd": "0.04673000000000001"
+  }
+}

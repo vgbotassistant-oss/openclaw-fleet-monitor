@@ -1,0 +1,48 @@
+{
+  "timestamp": "2026-02-22T18:54:14+00:00",
+  "total_tokens": 392,
+  "total_cost_usd": "0.000420",
+  "agents": {
+    "akane": {
+      "model": "deepseek/deepseek-chat",
+      "tokens": 5,
+      "cost_usd": "0.000140"
+    },
+    "ichinose": {
+      "model": "deepseek/deepseek-chat",
+      "tokens": 4,
+      "cost_usd": "0.000140"
+    },
+    "roxi": {
+      "model": "deepseek/deepseek-chat",
+      "tokens": 383,
+      "cost_usd": "0.000140"
+    }
+  },
+  "usage": [
+    {
+      "agent_id": "akane",
+      "model": "deepseek/deepseek-chat",
+      "tokens": 5,
+      "price_per_1k": "0.00014",
+      "cost_usd": "0.000140",
+      "calculated_at": "2026-02-22T18:54:14+00:00"
+    },
+    {
+      "agent_id": "ichinose",
+      "model": "deepseek/deepseek-chat",
+      "tokens": 4,
+      "price_per_1k": "0.00014",
+      "cost_usd": "0.000140",
+      "calculated_at": "2026-02-22T18:54:14+00:00"
+    },
+    {
+      "agent_id": "roxi",
+      "model": "deepseek/deepseek-chat",
+      "tokens": 383,
+      "price_per_1k": "0.00014",
+      "cost_usd": "0.000140",
+      "calculated_at": "2026-02-22T18:54:14+00:00"
+    }
+  ]
+}

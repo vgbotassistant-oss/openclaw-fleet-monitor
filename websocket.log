@@ -1,0 +1,28 @@
+👁️  Watching for changes to data/fleet.json
+🚀 Starting WebSocket server on port 18789
+🛑 WebSocket server cleanup complete
+Traceback (most recent call last):
+  File "/root/.openclaw/projects/openclaw-fleet-monitor/websocket-server.py", line 176, in <module>
+    asyncio.run(main())
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/root/.openclaw/projects/openclaw-fleet-monitor/websocket-server.py", line 153, in main
+    await server.run()
+  File "/root/.openclaw/projects/openclaw-fleet-monitor/websocket-server.py", line 141, in run
+    async with websockets.serve(self.handler, "127.0.0.1", WS_PORT):
+  File "/usr/local/lib/python3.12/dist-packages/websockets/asyncio/server.py", line 829, in __aenter__
+    return await self
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/websockets/asyncio/server.py", line 847, in __await_impl__
+    server = await self.create_server
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 1572, in create_server
+    raise OSError(err.errno, msg) from None
+OSError: [Errno 98] error while attempting to bind on address ('127.0.0.1', 18789): address already in use

@@ -1,0 +1,61 @@
+{
+  "generated_at": "2026-02-22T19:04:40+00:00",
+  "agents": [
+    {
+      "id": "akane",
+      "status": "⚪",
+      "task": "No hourly data",
+      "snippet": "No recent activity",
+      "model": "deepseek/deepseek-chat",
+      "tokens": 0,
+      "context": 0,
+      "last_active": "",
+      "workspace": "/root/.openclaw/workspace-akane"
+    },
+    {
+      "id": "ichinose",
+      "status": "⚪",
+      "task": "No hourly data",
+      "snippet": "No recent activity",
+      "model": "deepseek/deepseek-chat",
+      "tokens": 0,
+      "context": 0,
+      "last_active": "",
+      "workspace": "/root/.openclaw/workspace-ichinose"
+    },
+    {
+      "id": "roxi",
+      "status": "⚪",
+      "task": "No hourly data",
+      "snippet": "No recent activity",
+      "model": "deepseek/deepseek-chat",
+      "tokens": 0,
+      "context": 0,
+      "last_active": "",
+      "workspace": "/root/.openclaw/workspace-roxi"
+    }
+  ],
+  "usage": [
+    {
+      "provider": "DeepSeek",
+      "agent": "akane",
+      "sessions": 0,
+      "tokens": 0,
+      "calculated_at": "2026-02-22T19:04:40+00:00"
+    },
+    {
+      "provider": "DeepSeek",
+      "agent": "ichinose",
+      "sessions": 0,
+      "tokens": 0,
+      "calculated_at": "2026-02-22T19:04:40+00:00"
+    },
+    {
+      "provider": "DeepSeek",
+      "agent": "roxi",
+      "sessions": 0,
+      "tokens": 0,
+      "calculated_at": "2026-02-22T19:04:40+00:00"
+    }
+  ]
+}
